@@ -1,0 +1,57 @@
+﻿@using Dnet.QdrantAdmin.Client.Infrastructure.Models
+
+<style>
+    .dynamic-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px; /* Espacio entre las columnas */
+    }
+
+    .form-section {
+        display: contents; /* Esto asegura que los contenedores de sección no afecten la cuadrícula */
+    }
+
+    .field-group {
+        display: contents;
+    }
+
+    .form-field {
+        margin-bottom: 15px;
+    }
+
+</style>
+
+@if (Field != null)
+{
+    @if (Field.Type == "object" && Field.Subfields != null) // Trata "object" como tipo para agrupar campos
+    {
+        <label>@Field.Key:</label>
+        foreach (var subfield in Field.Subfields)
+        {
+            <DynamicFormField Field="subfield" />
+        }
+    }
+    else
+    {
+        <div>
+            <label>@Field.Key:</label>
+            <input type="@GetInputType(Field.Type)" />
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public FormField Field { get; set; }
+
+    private string GetInputType(string fieldType)
+    {
+        return fieldType switch
+        {
+            "numerical" => "number",
+            "string" => "text",
+            "date" => "date",
+            _ => "text" // Default a texto si el tipo no es reconocido
+        };
+    }
+}

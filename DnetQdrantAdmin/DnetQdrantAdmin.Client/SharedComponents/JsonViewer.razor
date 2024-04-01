@@ -1,0 +1,23 @@
+﻿@using Dnet.QdrantAdmin.Client.Infrastructure.Services
+@using Dnet.Blazor.Components.Form
+
+@inject AppInterop AppInterop
+
+<PropertyDisplay Property="Payload">
+    <pre @ref="jsonContainer" class="json-container"></pre>
+</PropertyDisplay>
+
+@code {
+    [Parameter]
+    public string JsonData { get; set; } = string.Empty;
+
+    private ElementReference jsonContainer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AppInterop.PrettyPrintJsonData(jsonContainer, JsonData);
+        }
+    }
+}

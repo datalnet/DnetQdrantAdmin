@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+# /LawyerShelve/src/Dnet.LawyerShelve.Api/appsettings.Development.json
+LawyerShelve/src/Dnet.LawyerShelve.Api/appsettings.Development.json
+LawyerShelve/src/Dnet.LawyerShelve.Client.Wasm/wwwroot/appsettings.Development.json

@@ -1,0 +1,86 @@
+﻿@using Dnet.QdrantAdmin.Application.Shared.Constants
+@using Dnet.QdrantAdmin.Client.Infrastructure.ExceptionHandling
+@using Dnet.QdrantAdmin.Client.Infrastructure.HelperClasses
+@using Dnet.Blazor.Components.Spinner.Infrastructure.Interfaces;
+@using Dnet.Blazor.Components.Toast.Infrastructure.Enums
+@using Dnet.Blazor.Components.Toast.Infrastructure.Interfaces
+@using System.Net
+
+
+@inject NavigationManager NavManager;
+@inject IToastService ToastService;
+@inject ISpinnerService SpinnerService;
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+
+    public void ProcessError(Exception ex, string alternateMessage = null)
+    {
+        SpinnerService.Hide();
+
+        Console.WriteLine(ex);
+
+        if (ex.GetType() == typeof(CustomReponseException))
+        {
+            var exr = (CustomReponseException)ex;
+
+            switch (exr.ProblemDetails.Status)
+            {
+                case (int)HttpStatusCode.NotFound:
+                    NavManager.NavigateTo("/404");
+                    break;
+
+                case (int)HttpStatusCode.Unauthorized:
+
+                    switch (exr.ProblemDetails?.Type)
+                    {
+                        case ProblemDetailType.ACCESS_TOKEN_EXPIRATION:
+
+                            NavManager.NavigateTo($"/refreshToken/{Uri.EscapeDataString(NavManager.ToBaseRelativePath(NavManager.Uri))}");
+
+                            break;
+
+                        case ProblemDetailType.ACCESS_TOKEN_VALIDATION_FAILURE:
+
+                            NavManager.NavigateTo("/unauthorized");
+
+                            break;
+
+                        default:
+
+                            var relativePath1 = NavManager.ToBaseRelativePath(NavManager.Uri);
+                            NavManager.NavigateTo($"/externalloginsignin/{Uri.EscapeDataString(relativePath1)}");
+
+                            break;
+                    }
+
+                    break;
+
+                case (int)HttpStatusCode.Forbidden:
+                    NavManager.NavigateTo("/forbidden");
+                    break;
+
+                case (int)HttpStatusCode.BadRequest:
+                    ToastService.Show(DnetToastConfig.Get(ToastType.Danger, exr.ProblemDetails?.Detail ?? string.Empty, exr.ProblemDetails?.Title ?? string.Empty));
+                    break;
+
+                case 2000:
+                    break;
+
+                default:
+                    ToastService.Show(DnetToastConfig.Get(ToastType.Danger, exr.ProblemDetails?.Detail ?? string.Empty, exr.ProblemDetails?.Title ?? string.Empty));
+                    break;
+            }
+        }
+        else
+        {
+            ToastService.Show(DnetToastConfig.Get(ToastType.Danger, ex.Message, "Error"));
+        }
+    }
+}

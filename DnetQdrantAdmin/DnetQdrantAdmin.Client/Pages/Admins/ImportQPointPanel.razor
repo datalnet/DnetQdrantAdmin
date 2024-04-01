@@ -1,0 +1,279 @@
+﻿@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Client.Pages.Admin
+@using Dnet.Blazor.Components.Button
+@using Dnet.Blazor.Components.Checkbox
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Models
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Enums
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Models
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Grid.BlgGrid;
+@using Dnet.Blazor.Components.Grid.Infrastructure.Entities;
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Models
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Toast.Infrastructure.Enums
+@using Dnet.Blazor.Components.Toast.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Toast.Infrastructure.Models
+@using Dnet.Blazor.Components.Select
+@using System.Net.Http.Headers;
+
+@inject IFloatingPanelService FloatingPanelService
+@inject IToastService ToastService
+@inject IDialogService DialogService
+@inject IAdminService AdminService
+
+<div class="dnet-panel in-floating-panel">
+    <div class="dnet-panel-header">
+        <div class="dsec-panel-content">
+            <span class="dsec-panel-content-title">Import resources</span>
+        </div>
+    </div>
+    <div class="dnet-panel-content">
+        <EditForm EditContext="@_editContext" style="width: 300px">
+            <div style="display:flex; align-items: baseline">
+                <label for="file-upload" class="custom-file-upload">
+                    Import file
+                </label>
+                <span class="dnet-m-l-10">@_fileName</span>
+                <InputFile OnChange="@ReadExcelFile" id="file-upload" multiple class="dnet-m-b-20 dnet-m-t-10" style="display: none;" />
+            </div>
+            <DnetFormField Label="LLM Model" IsRequired="true">
+                <ChildContent>
+                    <DnetSelect TValue="string"
+                                @bind-Value="_modelDto.Model"
+                                Items="_llmModels"
+                                TItem="ModelDto"
+                                DisplayValueConverter="(value) => (value.Model)"
+                                ValueConverter="(value) => (value.Model)"
+                                PlaceHolder=""
+                                OnItemSelected="ModelSelected">
+                    </DnetSelect>
+                </ChildContent>
+                <ErrorContent>
+                    <ValidationMessage For="@(() => _modelDto.Model)" />
+                </ErrorContent>
+            </DnetFormField>
+            <DnetFormField Label="Dimension" IsRequired="true">
+                <ChildContent>
+                    <DnetSelect TValue="int"
+                                @bind-Value="_modelDto.Dimension"
+                                Items="_dimensions"
+                                TItem="int"
+                                DisplayValueConverter="(value) => (value.ToString())"
+                                ValueConverter="(value) => (value)"
+                                PlaceHolder=""
+                                >
+                    </DnetSelect>
+                </ChildContent>
+                <ErrorContent>
+                    <ValidationMessage For="@(() => _modelDto.Dimension)" />
+                </ErrorContent>
+            </DnetFormField>
+            <DataAnnotationsValidator />
+        </EditForm>
+        <div style="height: calc(100% - 200px)">
+            <BlgGrid @ref="@_qpointBlGridReference"
+                     GridData="@_qpoints"
+                     GridColumns="@_qpointGridColumns"
+                     GroupGridColumn="GetGroupGridColumn<QpointDto>()"
+                     TItem="QpointDto"
+                     GridOptions="@_qpointGridOptions">
+            </BlgGrid>
+        </div>
+    </div>
+    <div class="dnet-panel-footer">
+        <DnetButton OnClick="CancelOverlay" class="dnet-m-r-10">Close</DnetButton>
+        <DnetButton OnClick="CloseOverlay" InitialFocus="true" class="dnet-m-r-10" disabled="@_formInvalid">Ok</DnetButton>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    [CascadingParameter]
+    private int OverlayReferenceId { get; set; }
+
+    [Parameter]
+    public List<ModelDto> Models { get; set; } = new();
+
+    private List<File> files { get; set; } = new();
+
+    private List<UploadResult> uploadResults = new();
+
+    private int maxAllowedFiles = 3;
+
+    private bool shouldRender;
+
+    private BlgGrid<QpointDto> _qpointBlGridReference = default!;
+
+    private List<QpointDto> _qpoints { get; set; } = new();
+
+    private List<GridColumn<QpointDto>> _qpointGridColumns { get; set; } = default!;
+
+    private GridOptions<QpointDto> _qpointGridOptions { get; set; } = default!;
+
+    private bool _formInvalid = true;
+
+    private EditContext? _editContext { get; set; }
+
+    private ValidationMessageStore? messageStore { get; set; }
+
+    private List<ModelDto> _llmModels { get; set; } = new();
+
+    private List<int> _dimensions { get; set; } = new();
+
+    private ModelDto _modelDto { get; set; } = new();
+
+    private string _fileName { get; set; } = string.Empty;
+
+
+    protected override void OnInitialized()
+    {
+        _qpointGridOptions = QpointGridConfiguration.GetQpointGridOptions();
+
+        _qpointGridOptions.CheckboxSelectionColumn = false;
+
+        _qpointGridColumns = QpointGridConfiguration.GetImportQpointGridColumns();
+
+        _llmModels = Models;
+
+        if (_llmModels.Any())
+        {
+            var model = _llmModels.Where(p => p.Default).Select(p => p).FirstOrDefault();
+
+            _modelDto.Model = model.Model;
+
+            _dimensions = model.Distances;
+
+            _modelDto.Dimension = model.Distances.FirstOrDefault();
+        }
+
+        _editContext = new EditContext(_modelDto);
+
+        messageStore = new(_editContext);
+
+        _editContext.OnFieldChanged += (data, eventArgs) =>
+        {
+            StateHasChanged();
+        };
+
+        _editContext.OnValidationRequested += (data, eventArgs) =>
+        {
+            messageStore?.Clear();
+
+            StateHasChanged();
+        };
+    }
+
+    private GridColumn<T> GetGroupGridColumn<T>()
+    {
+        return new GridColumn<T>
+            {
+                Height = 40,
+                Width = 200,
+                CanGrow = 0
+            };
+    }
+
+    private void CloseOverlay()
+    {
+        if (_formInvalid == true && _qpoints.Any()) return;
+
+        var createPointsDto = new CreatePointsDto()
+            {
+                pointDtos = _qpoints,
+                LlmModel = _modelDto.Model,
+                Dimension = _modelDto.Dimension
+            };
+
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Ok,
+                ComponentData = createPointsDto,
+                OverlayReferenceId = OverlayReferenceId,
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    private void CancelOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Cancel,
+                ComponentData = null,
+                OverlayReferenceId = OverlayReferenceId
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    private async Task ReadExcelFile(InputFileChangeEventArgs e)
+    {
+        long maxFileSize = 1024 * 1024 * 15;
+        var form = new MultipartFormDataContent();
+
+        foreach (var file in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            if (uploadResults.SingleOrDefault(f => f.FileName == file.Name) is null)
+            {
+                try
+                {
+                    var fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+                    form.Add(content: fileContent, name: "\"files\"", fileName: file.Name);
+
+                    _fileName = file.Name;
+                }
+                catch (Exception ex)
+                {
+                    Error?.ProcessError(ex);
+
+                    uploadResults.Add(
+                        new()
+                            {
+                                FileName = file.Name,
+                                ErrorCode = 6,
+                                Uploaded = false
+                            });
+                }
+            }
+        }
+
+        try
+        {
+            _qpoints = await AdminService.GetImportQPointData(form);
+
+            if (_qpoints.Any()) _formInvalid = false;
+        }
+        catch (Exception ex)
+        {
+            _formInvalid = true;
+
+            Error?.ProcessError(ex);
+        }
+    }
+
+    public class UploadResult
+    {
+        public bool Uploaded { get; set; }
+        public string? FileName { get; set; }
+        public string? StoredFileName { get; set; }
+        public int ErrorCode { get; set; }
+    }
+
+    private class File
+    {
+        public string? Name { get; set; }
+    }
+
+    private void ModelSelected()
+    {
+        _dimensions = _llmModels.Where(p => p.Model == _modelDto.Model).Select(p => p.Distances).FirstOrDefault();
+    }
+}

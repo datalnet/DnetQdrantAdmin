@@ -1,0 +1,618 @@
+﻿@page "/points"
+
+@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Application.Shared.Enums
+@using Dnet.QdrantAdmin.Client.Infrastructure.HelperClasses
+@using Dnet.QdrantAdmin.Client.Infrastructure.Interceptor
+@using Dnet.QdrantAdmin.Client.Infrastructure.Services
+@using Dnet.QdrantAdmin.Client.Pages.Admin
+@using Dnet.QdrantAdmin.Client.Pages.TherapyNotes
+@using Dnet.QdrantAdmin.Client.SharedComponents
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Models
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Enums
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Models
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Services
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Grid.BlgGrid
+@using Dnet.Blazor.Components.Grid.Infrastructure.Entities
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Models
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Select
+@using Dnet.Blazor.Components.Tabs
+@using Dnet.Blazor.Components.Tabs.Infrastructure.Models
+@using Dnet.Blazor.Components.Toast.Infrastructure.Enums
+@using Dnet.Blazor.Components.Toast.Infrastructure.Interfaces
+@using Qdrant.Client.Grpc
+@using System.Text.Json
+
+@inject IFloatingPanelService FloatingPanelService
+@inject IToastService ToastService
+@inject IDialogService DialogService
+@inject IAdminService AdminService
+@inject AppInterop AppInterop
+@inject ILlmProviderService LlmProviderService
+
+<div class="container-fluid">
+    <div style="margin:20px 10px 0 20px; width: 250px">
+        <EditForm EditContext="@_editContext">
+            <DnetFormField Label="Collection">
+                <ChildContent>
+                    <DnetSelect TValue="string"
+                                @bind-Value="@_collectionName"
+                                Items="_collections"
+                                TItem="CollectionDto"
+                                DisplayValueConverter="(value) => (value.Name)"
+                                ValueConverter="(value) => (value.Name)"
+                                PlaceHolder="Collection"
+                                IsRequired="true"
+                                OnItemSelected="CollectionSelected">
+                    </DnetSelect>
+                </ChildContent>
+            </DnetFormField>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+    <div class="main-page-table-container">
+        <div class="main-page-left-side">
+            <div class="dnet-panel-header" style="margin-bottom: 15px">
+                <div class="dsec-panel-content dnet-p-l-10" style="white-space: nowrap;overflow: hidden;">
+                    <span class="dsec-panel-content-title">Points</span>
+                    <span class="dsec-panel-content-desciption" style="text-overflow: ellipsis;overflow: hidden;">All qpoints</span>
+                </div>
+
+                <div class="dnet-panel-button-list">
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item" @onclick="(() => ShowAddQpointPanel())">
+                        <i class="bi bi-plus"></i>
+                        <span class="dnet-panel-button-list-item-text">New</span>
+                    </div>
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item @(_selectedQpoint == null ||  string.IsNullOrEmpty(_selectedQpoint.QpointId) || _selectedQpoints.Count() > 1 ? "disabled" : null)" @onclick="(() => ShowEditQpointPanel())">
+                        <i class="bi bi-pencil-square"></i>
+                        <span class="dnet-panel-button-list-item-text">Edit</span>
+                    </div>
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item" @onclick="(() => Import())">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        <span class="dnet-panel-button-list-item-text">Import</span>
+                    </div>
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item @(!_selectedQpoints.Any() ? "disabled" : null)" @onclick="(() => DeleteQpoints())">
+                        <i class="bi bi-trash"></i>
+                        <span class="dnet-panel-button-list-item-text">Delete</span>
+                    </div>
+                </div>
+            </div>
+            <div class="main-table">
+                @if (_showGrids)
+                {
+                    <BlgGrid @ref="@_qpointBlGridReference"
+                             GridData="@_qpoints"
+                             GridColumns="@_qpointGridColumns"
+                             TItem="QpointDto"
+                             GridOptions="@_qpointGridOptions"
+                             OnRowClicked="OnRowClicked"
+                             OnSelectionChanged="SelectionChanged">
+                    </BlgGrid>
+                }
+            </div>
+        </div>
+        <div class="main-page-right-side">
+            <div class="dnet-panel-header">
+                <div class="dsec-panel-content">
+                    <span class="dsec-panel-content-title">Point details</span>
+                    <span class="dsec-panel-content-desciption">Select a qpoint to see mor information</span>
+                </div>
+            </div>
+            <div class="details-container">
+                <DnetTabGroup mat-align-tabs="start" OnTabClicked="TabClicked" TabHeaderBorder="false">
+                    <DnetTab Label="Information">
+                        <div class="side-info-container">
+                            @if (_selectedQpoint != null && !string.IsNullOrEmpty(_selectedQpoint.QpointId) && _qpoint is not null)
+                            {
+                                <div class="container-contact-basic dnet-m-t-20">
+                                    <div class="type">
+                                        <PropertyDisplay Property="Name">@_selectedQpoint.CollectionName</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="PointId">@_qpoint.QpointId</PropertyDisplay>
+                                    </div>
+                                    <div style="width: calc(100% - 0px); height: 400px">
+                                        <PropertyDisplay Property="Payload">
+                                            <pre @ref="jsonContainer" class="json-container"></pre>
+                                        </PropertyDisplay>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </DnetTab>
+                    <DnetTab Label="Vector">
+                        @if (_selectedQpoint != null && !string.IsNullOrEmpty(_selectedQpoint.QpointId) && _qpoint is not null)
+                        {
+                            <div class="container-contact-basic dnet-m-t-20">
+                                <div class="type">
+                                    <DnetFormField Label="Vector" UseClearButton="false">
+                                        <ChildContent>
+                                            <DnetInputTextArea @bind-Value="_vector" rows="20" style="height: 90%">
+                                            </DnetInputTextArea>
+                                        </ChildContent>
+                                    </DnetFormField>
+                                </div>
+                            </div>
+                        }
+                    </DnetTab>
+                </DnetTabGroup>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    private List<QpointDto> _qpoints { get; set; } = new();
+
+    private BlgGrid<QpointDto> _qpointBlGridReference;
+
+    private List<GridColumn<QpointDto>> _qpointGridColumns { get; set; }
+
+    private GridOptions<QpointDto> _qpointGridOptions { get; set; }
+
+    private List<QpointDto> _selectedQpoints { get; set; } = new();
+
+    private QpointDto _selectedQpoint { get; set; } = new();
+
+    private OverlayReference _overlayReference;
+
+    private OverlayReference _dialogReference;
+
+    private bool _isActive = true;
+
+    private bool _showGrids = true;
+
+    private int _activeTabId { get; set; } = 1;
+
+    private QpointDto _qpoint { get; set; } = new();
+
+    private string _vector { get; set; } = string.Empty;
+
+    private string _payload { get; set; } = string.Empty;
+
+    private List<CollectionDto> _collections { get; set; } = new();
+
+    private string _collectionName { get; set; } = string.Empty;
+
+    private EditContext? _editContext { get; set; }
+
+    private ValidationMessageStore? messageStore { get; set; }
+
+    private ElementReference jsonContainer;
+
+
+    protected override void OnInitialized()
+    {
+        _qpointGridOptions = QpointGridConfiguration.GetQpointGridOptions();
+
+        _qpointGridColumns = QpointGridConfiguration.GetQpointGridColumns();
+
+        _editContext = new EditContext(_collectionName);
+
+        messageStore = new(_editContext);
+
+        _editContext.OnFieldChanged += (data, eventArgs) =>
+        {
+            StateHasChanged();
+        };
+
+        _editContext.OnValidationRequested += (data, eventArgs) =>
+        {
+            messageStore?.Clear();
+
+            StateHasChanged();
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _collections = await GetCollections();
+
+            if (_collections.Any())
+            {
+                var collection = _collections.FirstOrDefault();
+
+                _collectionName = collection is not null ? collection.Name : string.Empty;
+
+                if (!string.IsNullOrEmpty(_collectionName)) _qpoints = await GetQpoints();
+
+                await _qpointBlGridReference.SetRowDataAsync(_qpoints);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private async Task<List<QpointDto>> GetQpoints()
+    {
+        var scrollDto = new ScrollDto
+            {
+                CollectionName = _collectionName,
+                Limit = 25
+            };
+
+        var result = await AdminService.ScrollPoints(scrollDto);
+
+        return result;
+    }
+
+    private async Task<List<CollectionDto>> GetCollections()
+    {
+        var result = await AdminService.ListCollections();
+
+        return result;
+    }
+
+    private async Task CollectionSelected()
+    {
+        _selectedQpoint = new();
+
+        if (string.IsNullOrEmpty(_collectionName)) return;
+
+        _qpoints = await GetQpoints();
+
+        await _qpointBlGridReference.SetRowDataAsync(_qpoints);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async Task TabClicked(TabClikedEventData tabClikedEventData)
+    {
+        _activeTabId = tabClikedEventData.TabId;
+
+        await LoadTab();
+    }
+
+    public async Task LoadTab()
+    {
+        switch (_activeTabId)
+        {
+            case (int)ActiveTab.Información:
+
+                if (!string.IsNullOrEmpty(_selectedQpoint.CollectionName))
+                {
+                    var scrollDto = new ScrollDto
+                        {
+                            CollectionName = _selectedQpoint.CollectionName,
+                            PointId = _selectedQpoint.PointId,
+                            WithPayload = true,
+                            WithVector = false,
+                            PointIdType = _selectedQpoint.PointIdType,
+                            QpointId = _selectedQpoint.QpointId
+                        };
+
+                    _qpoint = await AdminService.RetrievePoint(scrollDto);
+
+                    var jsonObject = JsonSerializer.Deserialize<object>(_qpoint.PayloadString);
+
+                    _payload = JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = true });
+
+                    await AppInterop.PrettyPrintJsonData(jsonContainer, _payload);
+                }
+
+                break;
+
+            case (int)ActiveTab.Vector:
+
+                if (!string.IsNullOrEmpty(_selectedQpoint.CollectionName))
+                {
+                    var scrollDto = new ScrollDto
+                        {
+                            CollectionName = _selectedQpoint.CollectionName,
+                            PointId = _selectedQpoint.PointId,
+                            WithPayload = false,
+                            WithVector = true,
+                            PointIdType = _selectedQpoint.PointIdType,
+                            QpointId = _selectedQpoint.QpointId
+                        };
+
+                    _qpoint = await AdminService.RetrievePoint(scrollDto);
+
+                    _vector = FloatArrayAsString(_qpoint.Vectors);
+                }
+
+                break;
+
+            default:
+                break;
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    private async Task OnRowClicked(Dnet.Blazor.Components.Grid.Infrastructure.Entities.RowNode<QpointDto> rowNode)
+    {
+        _selectedQpoint = rowNode != null ? rowNode.RowData : new();
+
+        await LoadTab();
+    }
+
+    public void SelectionChanged(List<Dnet.Blazor.Components.Grid.Infrastructure.Entities.RowNode<QpointDto>> rowNodes)
+    {
+        _selectedQpoints = rowNodes.Select(p => p.RowData).ToList();
+    }
+
+    public async Task ShowAddQpointPanel()
+    {
+        try
+        {
+            var floatingPanelConfig = new FloatingPanelConfig
+                {
+                    HasBackdrop = true,
+                    HasTransparentBackdrop = true,
+                    Postion = FloatingPanelPostion.TopRight,
+                    Width = (int?)FloatingPanelWidth.Medium,
+                    Height = null
+                };
+
+            var models = await GetLlmModels();
+
+            var parameters = new Dictionary<string, object>()
+            {
+                { "Models", models },
+            };
+
+            _overlayReference = FloatingPanelService.Show(typeof(AddQpointPanel), parameters, floatingPanelConfig);
+
+            _overlayReference.Close += CloseAddFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    public async void CloseAddFloatingPanel(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+                var qpoint = (QpointDto)overlayDataResult.ComponentData;
+
+                qpoint.CollectionName = _collectionName;
+
+                await AdminService.CreatePoint(qpoint);
+
+                ToastService.Show(DnetToastConfig.Get(ToastType.Success, "Data saved successfully", "info"));
+
+                _qpoints = await GetQpoints();
+
+                await _qpointBlGridReference.SetRowDataAsync(_qpoints);
+
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private async Task ShowEditQpointPanel()
+    {
+        try
+        {
+            if (_selectedQpoint == null || string.IsNullOrEmpty(_selectedQpoint.QpointId)) return;
+
+            // var employee = await QpointService.GetQpointForQpointEdit(_selectedQpoint.QpointId);
+
+            var floatingPanelConfig = new FloatingPanelConfig
+                {
+                    HasBackdrop = true,
+                    HasTransparentBackdrop = true,
+                    Postion = FloatingPanelPostion.TopRight,
+                    Width = (int?)FloatingPanelWidth.Medium,
+                    Height = null
+                };
+
+            var parameters = new Dictionary<string, object>()
+            {
+            };
+
+            _overlayReference = FloatingPanelService.Show(typeof(EditQpointPanel), parameters, floatingPanelConfig);
+
+            _overlayReference.Close += CloseEditFloatingPanel;
+        }
+        catch (HttpResponseException)
+        {
+            _overlayReference.Close += CloseEditFloatingPanel;
+            ToastService.Show(DnetToastConfig.Get(ToastType.Warning, "El usuario no existe, contactar al administrador", "Advertencia"));
+        }
+
+    }
+
+    private async void CloseEditFloatingPanel(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+            }
+
+            if (_overlayReference != null) _overlayReference.Close -= CloseEditFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseEditFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private void DeleteQpoints()
+    {
+        if (!_selectedQpoints.Any()) return;
+
+        ShowQpointDeleteDialog(_selectedQpoints);
+    }
+
+    private void ShowQpointDeleteDialog(List<QpointDto> qpoints)
+    {
+        var names = qpoints.Select(p => $"{p.QpointId}").ToList();
+
+        var dialogConfig = new DialogConfig()
+            {
+                Title = "Delete Qpoints",
+                HasBackdrop = true,
+                HasTransparentBackdrop = false,
+                Width = "600px",
+                Height = "350px"
+            };
+
+        var text = "The following items will be deleted";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "Text", text },
+            { "Items", names }
+        };
+
+        _dialogReference = DialogService.Open(typeof(DeleteDialog), parameters, dialogConfig);
+
+        _dialogReference.Close += CloseQpointDeleteDialog;
+    }
+
+    private async void CloseQpointDeleteDialog(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+                var qpointIds = _selectedQpoints.Select(p => p.QpointId).ToList();
+
+                if (!qpointIds.Any()) return;
+
+                var deletePointDto = new DeletePointDto()
+                    {
+                        CollectionName = _collectionName,
+                        Wait = true,
+                        Ids = qpointIds
+                    };
+
+                var result = await AdminService.DeletePoint(deletePointDto);
+
+                ToastService.Show(DnetToastConfig.Get(ToastType.Success, "Data deleted successfully", "info"));
+
+                _selectedQpoint = new();
+
+                _qpoints = await GetQpoints();
+
+                await _qpointBlGridReference.SetRowDataAsync(_qpoints);
+
+                await InvokeAsync(StateHasChanged);
+            };
+
+            _dialogReference.Close -= CloseQpointDeleteDialog;
+        }
+        catch (Exception ex)
+        {
+            _dialogReference.Close -= CloseQpointDeleteDialog;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private string FloatArrayAsString(float[] vectors)
+    {
+        if (!vectors.Any()) return string.Empty;
+
+        return string.Join(", ", vectors);
+    }
+
+    private async Task Import()
+    {
+        var componentType = typeof(ImportQPointPanel);
+
+        await ShowImportDialog(componentType);
+    }
+
+    private async Task ShowImportDialog(Type componentType)
+    {
+        var floatingPanelConfig = new FloatingPanelConfig
+            {
+                HasBackdrop = true,
+                HasTransparentBackdrop = true,
+                Postion = FloatingPanelPostion.TopRight,
+                Width = 640,
+            };
+
+        var models = await GetLlmModels();
+
+        var parameters = new Dictionary<string, object>()
+        {
+            { "Models", models },
+        };
+
+        _overlayReference = FloatingPanelService.Show(componentType, parameters, floatingPanelConfig);
+
+        _overlayReference.Close += DataImportDiscard;
+    }
+
+    private void DataImportDiscard(OverlayResult overlayDataResult)
+    {
+        _ = CloseImportFloatingPanel(overlayDataResult);
+    }
+
+    private async Task CloseImportFloatingPanel(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+                var createPointsDto = (CreatePointsDto)overlayDataResult.ComponentData;
+
+                createPointsDto.CollectionName = _collectionName;
+
+                await AdminService.CreatePoints(createPointsDto);
+
+                ToastService.Show(DnetToastConfig.Get(ToastType.Success, "Data saved successfully", "Information"));
+
+                _qpoints = await GetQpoints();
+
+                await _qpointBlGridReference.SetRowDataAsync(_qpoints);
+
+                StateHasChanged();
+            }
+
+            if (_overlayReference != null) _overlayReference.Close -= DataImportDiscard;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= DataImportDiscard;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    public enum ActiveTab
+    {
+        Información = 1,
+        Vector = 2
+    }
+
+    private async Task<List<ModelDto>> GetLlmModels()
+    {
+        var result = await LlmProviderService.GetLlmModels();
+
+        return result.Models;
+    }
+}

@@ -1,0 +1,290 @@
+﻿@page "/search"
+@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Client.Pages.Admin
+@using Dnet.QdrantAdmin.Client.Pages.TherapyNotes
+@using Dnet.QdrantAdmin.Client.SharedComponents
+@using Dnet.Blazor.Components.Button
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Select
+@using Qdrant.Client.Grpc
+@using System.Text.Json
+
+@inject ILlmProviderService LlmProviderService
+@inject IAdminService AdminService
+
+<style>
+    .form-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 columnas */
+        grid-template-rows: auto auto auto auto auto; /* 5 filas */
+        gap: 10px; /* Espacio entre celdas */
+        width: 500px; /* Ancho del contenedor */
+        margin: 0 auto; /* Centrar el contenedor */
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="main-page-table-container">
+        <div class="main-page-left-side">
+            <div class="dnet-panel-header dnet-m-l-20">
+                <div class="dsec-panel-content">
+                    <span class="dsec-panel-content-title">Search</span>
+                    <span class="dsec-panel-content-desciption">Search for similar vectors</span>
+                </div>
+            </div>
+            <div class="search-container">
+                <div class="search-conditions">
+                    <EditForm EditContext="@_editContext" class="form-container">
+                        <DnetFormField Label="LLM Model" IsRequired="true">
+                            <ChildContent>
+                                <DnetSelect TValue="string"
+                                            @bind-Value="@_similaritySearchDto.LlmModel"
+                                            Items="_llmModels"
+                                            TItem="ModelDto"
+                                            DisplayValueConverter="(value) => (value.Model)"
+                                            ValueConverter="(value) => (value.Model)"
+                                            PlaceHolder=""
+                                            OnItemSelected="ModelSelected">
+                                </DnetSelect>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DnetFormField Label="Dimension" IsRequired="true">
+                            <ChildContent>
+                                <DnetSelect TValue="int"
+                                            @bind-Value="@_similaritySearchDto.Dimension"
+                                            Items="_dimensions"
+                                            TItem="int"
+                                            DisplayValueConverter="(value) => (value.ToString())"
+                                            ValueConverter="(value) => (value)"
+                                            PlaceHolder=""
+                                            >
+                                </DnetSelect>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DnetFormField Label="Collection" IsRequired="true">
+                            <ChildContent>
+                                <DnetSelect TValue="string"
+                                            @bind-Value="@_similaritySearchDto.CollectionName"
+                                            Items="_collections"
+                                            TItem="CollectionDto"
+                                            DisplayValueConverter="(value) => (value.Name)"
+                                            ValueConverter="(value) => (value.Name)"
+                                            PlaceHolder="Collection">
+                                </DnetSelect>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DnetFormField Label="Number of points to retrieve" UseClearButton="false">
+                            <ChildContent>
+                                <DnetInputNumber @bind-Value="_similaritySearchDto.Limit">
+                                </DnetInputNumber>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DnetFormField Label="Score threshold" UseClearButton="false">
+                            <ChildContent>
+                                <DnetInputNumber @bind-Value="_similaritySearchDto.ScoreThreshold">
+                                </DnetInputNumber>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DnetFormField Label="ef Search" UseClearButton="false">
+                            <ChildContent>
+                                <DnetInputNumber @bind-Value="_efSearch">
+                                </DnetInputNumber>
+                            </ChildContent>
+                        </DnetFormField>
+                        <DataAnnotationsValidator />
+                    </EditForm>
+                </div>
+                <div class="search-data-container">
+                    <div class="search-data">
+                        <DnetFormField Label="Text" UseClearButton="false">
+                            <ChildContent>
+                                <DnetInputTextArea @bind-Value="_similaritySearchDto.Text" rows="10">
+                                </DnetInputTextArea>
+                            </ChildContent>
+                            <HintContent>
+                                Text to search
+                            </HintContent>
+                        </DnetFormField>
+                    </div>
+                    <div class="filter-data">
+                        <DnetFormField Label="Filter" UseClearButton="false">
+                            <ChildContent>
+                                <DnetInputTextArea @bind-Value="_similaritySearchDto.FilterString" rows="10">
+                                </DnetInputTextArea>
+                            </ChildContent>
+                            <HintContent>
+                                Data in json format
+                            </HintContent>
+                        </DnetFormField>
+                    </div>
+                    <div class="search-control">
+                        <DnetButton OnClick="SimilaritySearch" InitialFocus="true" class="dnet-m-r-10" disabled="@_formInvalid">Search</DnetButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-page-right-side">
+            <div class="dnet-panel-header">
+                <div class="dsec-panel-content">
+                    <span class="dsec-panel-content-title">Search results</span>
+                    <span class="dsec-panel-content-desciption">Similar points order by score</span>
+                </div>
+            </div>
+            <div class="search-resul-container">
+                @foreach (var scoredPoint in scoredPoints)
+                {
+                    <div style="margin-top: 20px; display: flex; flex-direction: column">
+                        <div>
+                            <PropertyDisplay Property="Score">
+                                @scoredPoint.Score
+                            </PropertyDisplay>
+                        </div>
+                        <div>
+                            <JsonViewer JsonData="@scoredPoint.PayloadString"></JsonViewer>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    private List<SearchResultDto> scoredPoints = new();
+
+    private List<CollectionDto> _collections { get; set; } = new();
+
+    private string _collectionName { get; set; } = string.Empty;
+
+    private EditContext? _editContext { get; set; }
+
+    private ValidationMessageStore? messageStore { get; set; }
+
+    private ulong _numberOfPointsToRetrieve { get; set; } = 5;
+
+    private ulong _efSearch { get; set; } = 200;
+
+    private List<ModelDto> _llmModels { get; set; } = new();
+
+    private List<int> _dimensions { get; set; } = new();
+
+    private SimilaritySearchDto _similaritySearchDto { get; set; } = new();
+
+    private bool _formInvalid = true;
+
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_similaritySearchDto);
+
+        messageStore = new(_editContext);
+
+        _editContext.OnFieldChanged += (data, eventArgs) =>
+        {
+            _formInvalid = !_editContext.Validate();
+            StateHasChanged();
+        };
+
+        _editContext.OnValidationRequested += (data, eventArgs) =>
+        {
+            messageStore?.Clear();
+
+            StateHasChanged();
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _llmModels = await GetLlmModels();
+
+            if(_llmModels.Any())
+            {
+                var model = _llmModels.Where(p => p.Default).Select(p => p).FirstOrDefault();
+
+                _similaritySearchDto.LlmModel = model.Model;
+
+                _dimensions = model.Distances;
+
+                _similaritySearchDto.Dimension = model.Distances.FirstOrDefault();
+            }
+
+            _collections = await GetCollections();
+
+            if (_collections.Any())
+            {
+                var collection = _collections.FirstOrDefault();
+
+                _collectionName = collection is not null ? collection.Name : string.Empty;
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private async Task<List<ModelDto>> GetLlmModels()
+    {
+        var result = await LlmProviderService.GetLlmModels();
+
+        return result.Models;
+    }
+
+    private async Task SimilaritySearch()
+    {
+
+        if (_formInvalid) return;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(_collectionName))
+            {
+                var searchParams = new SearchParams
+                    {
+                        HnswEf = _efSearch,
+                    };
+
+                _similaritySearchDto.SearchParams = searchParams;
+
+                scoredPoints = new();
+
+                scoredPoints = await LlmProviderService.SimilaritySearch(_similaritySearchDto);
+            }
+        }
+        catch (Exception ex)
+        {
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private string GetJsonPayload(string payload)
+    {
+        var jsonObject = JsonSerializer.Deserialize<object>(payload);
+
+        var json = JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = true });
+
+        return json;
+    }
+
+    private async Task<List<CollectionDto>> GetCollections()
+    {
+        var result = await AdminService.ListCollections();
+
+        return result;
+    }
+
+    private void ModelSelected()
+    {
+        _dimensions = _llmModels.Where(p => p.Model == _similaritySearchDto.LlmModel).Select(p => p.Distances).FirstOrDefault();
+    }
+
+}

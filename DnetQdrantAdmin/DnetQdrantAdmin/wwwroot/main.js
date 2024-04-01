@@ -1,0 +1,1 @@
+window.qdrantapp={prettyPrintJsonData:function(r,o){try{var n=JSON.parse(o);r?r.innerHTML=prettyPrintJson.toHtml(n):console.error("Elemento referenciado no encontrado")}catch(r){console.error("Error al procesar o mostrar JSON:",r)}}};

@@ -1,0 +1,103 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using System.Drawing
+@using Dnet.Blazor.Components.Button
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Models
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Models
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Toast.Infrastructure.Enums
+@using Dnet.Blazor.Components.Toast.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Toast.Infrastructure.Models
+@using Dnet.Blazor.Components.Autocomplete
+@using Dnet.Blazor.Components.List
+
+@inject IToastService ToastService
+@inject IDialogService DialogService
+
+<div class="" style="display:flex;flex-direction: column;justify-content:space-between; height: calc(100% - 0px); width: 100%;">
+    <div class="dnet-panel-content" style="flex: 1 0 calc(100% - 100px); overflow:scroll">
+        <DnetList TItem="string"
+                  @ref="_listComponent"
+                  Items="@Items"
+                  ListOptions="@_listOptions">
+            <ListItemContent Context="Item">
+                <div style="display: flex; width: 100%">
+                    @Item
+                </div>
+            </ListItemContent>
+        </DnetList>
+    </div>
+    <div class="dnet-panel-footer" style="height: 50px;display: flex;align-items: center;justify-content: flex-end;">
+        <DnetButton OnClick="CancelOverlay" class="dnet-m-r-10">Cancel</DnetButton>
+        <DnetButton OnClick="CloseOverlay" InitialFocus="true" class="dnet-m-r-10">Accept</DnetButton>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private int OverlayReferenceId { get; set; }
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    [Parameter]
+    public List<string>? Items { get; set; }
+
+    private ListOptions<string> _listOptions { get; set; } = new();
+
+    private DnetList<string> _listComponent { get; set; } = new();
+
+
+    protected override void OnInitialized()
+    {
+        _listOptions = GetListOptions();
+        _listOptions.HeaderText = Text;
+    }
+
+    void CloseOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Ok,
+                ComponentData = $"Overlay ReferenceId => {OverlayReferenceId}",
+                OverlayReferenceId = OverlayReferenceId
+            };
+
+        DialogService.Close(dataResult);
+    }
+
+    void CancelOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Cancel,
+                ComponentData = null,
+                OverlayReferenceId = OverlayReferenceId
+            };
+
+        DialogService.Close(dataResult);
+    }
+
+    private ListOptions<string> GetListOptions()
+    {
+        return new ListOptions<string>()
+            {
+                DisplayValueConverter = (value) => value,
+                SortedData = (value) => value,
+                SearchValueConverter = (value) => value,
+                ItemSize = 40f,
+                MultiSelect = true,
+                DebounceTime = 250,
+                EnableServerSide = false,
+                EnableSearching = false,
+                EnableSorting = false,
+                PageSize = 50,
+                EnablePagingination = false,
+                CheckboxSelectionColumn = false,
+                ShowHeader = true,
+                ShowFooter = true,
+            };
+    }
+}

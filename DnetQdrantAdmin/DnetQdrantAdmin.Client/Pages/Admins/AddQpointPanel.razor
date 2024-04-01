@@ -1,0 +1,181 @@
+﻿@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Client.Infrastructure.Enums
+@using Dnet.Blazor.Components.Button
+@using Dnet.Blazor.Components.Checkbox
+@using Dnet.Blazor.Components.ExpansionPanel
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Select
+@using Qdrant.Client.Grpc
+
+@inject IFloatingPanelService FloatingPanelService
+
+<div class="dnet-panel in-floating-panel">
+    <div class="dnet-panel-header">
+        <div class="dsec-panel-content">
+            <span class="dsec-panel-content-title">Add Point</span>
+        </div>
+    </div>
+    <div class="dnet-panel-content">
+        <EditForm EditContext="@_editContext">
+            <DnetInputCheckbox @bind-Value="_pointDto.HasUuid" DisplayName="On DiskPayload">
+                Use GUI as point Id
+            </DnetInputCheckbox>
+            <DnetFormField Label="LLM Model" IsRequired="true">
+                <ChildContent>
+                    <DnetSelect TValue="string"
+                                @bind-Value="_pointDto.LlmModel"
+                                Items="_llmModels"
+                                TItem="ModelDto"
+                                DisplayValueConverter="(value) => (value.Model)"
+                                ValueConverter="(value) => (value.Model)"
+                                PlaceHolder=""
+                                OnItemSelected="ModelSelected">
+                    </DnetSelect>
+                </ChildContent>
+                <ErrorContent>
+                    <ValidationMessage For="@(() => _pointDto.LlmModel)" />
+                </ErrorContent>
+            </DnetFormField>
+            <DnetFormField Label="Dimension" IsRequired="true">
+                <ChildContent>
+                    <DnetSelect TValue="int"
+                                @bind-Value="_pointDto.Dimension"
+                                Items="_dimensions"
+                                TItem="int"
+                                DisplayValueConverter="(value) => (value.ToString())"
+                                ValueConverter="(value) => (value)"
+                                PlaceHolder=""
+                                >
+                    </DnetSelect>
+                </ChildContent>
+                <ErrorContent>
+                    <ValidationMessage For="@(() => _pointDto.Dimension)" />
+                </ErrorContent>
+            </DnetFormField>
+            <DnetFormField Label="Text" UseClearButton="false" IsRequired="true">
+                <ChildContent>
+                    <DnetInputTextArea @bind-Value="_pointDto.Text" rows="10">
+                    </DnetInputTextArea>
+                </ChildContent>
+                <ErrorContent>
+                    <ValidationMessage For="@(() => _pointDto.Text)" />
+                </ErrorContent>
+            </DnetFormField>
+            <DnetFormField Label="Payload" UseClearButton="false">
+                <ChildContent>
+                    <DnetInputTextArea @bind-Value="_pointDto.PayloadString" rows="15" style="height: 90%">
+                    </DnetInputTextArea>
+                </ChildContent>
+                <HintContent>
+                    Add payload data in json format ex. {"username": "qadrantuser"}
+                </HintContent>
+            </DnetFormField>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+    <div class="dnet-panel-footer">
+        <DnetButton OnClick="CancelOverlay" class="dnet-m-r-10">Close</DnetButton>
+        <DnetButton OnClick="CloseOverlay" InitialFocus="true" class="dnet-m-r-10" disabled="@_formInvalid">Ok</DnetButton>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private int OverlayReferenceId { get; set; }
+
+    [Parameter]
+    public List<ModelDto> Models { get; set; } = new();
+
+    private EditContext? _editContext { get; set; }
+
+    private ValidationMessageStore? messageStore { get; set; }
+
+    private bool _isExpanded { get; set; }
+
+    private bool _formInvalid = true;
+
+    private QpointDto _pointDto { get; set; } = new();
+
+    private List<ValueTypeDto> distanceOptions = new();
+
+    private string _distance = string.Empty;
+
+    private List<ModelDto> _llmModels { get; set; } = new();
+
+    private List<int> _dimensions { get; set; } = new();
+
+
+    protected override void OnInitialized()
+    {
+        _llmModels = Models;
+
+        if (_llmModels.Any())
+        {
+            var model = _llmModels.Where(p => p.Default).Select(p => p).FirstOrDefault();
+
+            _pointDto.LlmModel = model.Model;
+
+            _dimensions = model.Distances;
+
+            _pointDto.Dimension = model.Distances.FirstOrDefault();
+        }
+
+        _editContext = new EditContext(_pointDto);
+
+        messageStore = new(_editContext);
+
+        _editContext.OnFieldChanged += (data, eventArgs) =>
+        {
+            _formInvalid = !_editContext.Validate();
+            StateHasChanged();
+        };
+
+        _editContext.OnValidationRequested += (data, eventArgs) =>
+        {
+            messageStore?.Clear();
+
+            StateHasChanged();
+        };
+    }
+
+    private void CloseOverlay()
+    {
+        _pointDto.HasNum = !_pointDto.HasUuid;
+
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Ok,
+                ComponentData = _pointDto,
+                OverlayReferenceId = OverlayReferenceId,
+                CurrentAction = OverlayCurrentAction.Adding.ToString()
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    private void CancelOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Cancel,
+                ComponentData = null,
+                OverlayReferenceId = OverlayReferenceId
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    public void ExpandedChanged(DnetExpansionPanelItem expansionPanelItem)
+    {
+        var panel = expansionPanelItem;
+    }
+
+    private void ModelSelected()
+    {
+        _dimensions = _llmModels.Where(p => p.Model == _pointDto.LlmModel).Select(p => p.Distances).FirstOrDefault();
+    }
+}

@@ -1,0 +1,44 @@
+﻿@font-face {
+    font-family: "Maersk Text";
+    font-weight: 400 600;
+    src: url("/fonts/MaerskText-Regular.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Maersk Text";
+    font-weight: 700 900;
+    src: url("/fonts/MaerskText-Bold.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Maersk Text";
+    font-weight: 100 300;
+    src: url("/fonts/MaerskText-Light.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Maersk Headline";
+    font-weight: 400 600;
+    src: url("/fonts/MaerskHeadline-Regular.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Maersk Headline";
+    font-weight: 700 900;
+    src: url("/fonts/MaerskHeadline-Bold.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Maersk Headline";
+    font-weight: 100 300;
+    src: url("/fonts/MaerskHeadline-Light.woff") format("woff");
+}
+
+body {
+    font-family: var(--body-font-family) !important;
+    background-color: var(--body-background-color);
+}
+
+div * {
+    font-family: "Maersk Text", Verdana, Helvetica, Sans-Serif !important;
+}

@@ -1,0 +1,27 @@
+﻿.dnet-desktop-content {
+    padding: 0;
+    flex: 1 1 0;
+
+    &.destok-layout {
+        height: calc(100vh - 25px);
+    }
+}
+
+.dnet-desktop-header {
+    background-color: transparent;
+}
+
+.dnet-menu-img {
+    .bi {
+        font-size: 1rem;
+        margin-right: 8px;
+        margin-left: 8px;
+        color: rgb(0, 120, 212);
+    }
+}
+
+.dnet-tree-content {
+    &.active {
+        font-weight: 700;
+    }
+}

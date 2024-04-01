@@ -1,0 +1,252 @@
+﻿@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Client.Infrastructure.Enums
+@using Dnet.Blazor.Components.Button
+@using Dnet.Blazor.Components.Checkbox
+@using Dnet.Blazor.Components.ExpansionPanel
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Select
+@using Qdrant.Client.Grpc
+
+@inject IFloatingPanelService FloatingPanelService
+
+<div class="dnet-panel in-floating-panel">
+    <div class="dnet-panel-header">
+        <div class="dsec-panel-content">
+            <span class="dsec-panel-content-title">Add Collection</span>
+        </div>
+    </div>
+    <div class="dnet-panel-content">
+        <EditForm EditContext="@_editContext" style="display: flex;flex-direction:column">
+            <div style="padding: 1px 3px 1px 1px">
+                <DnetExpansionPanel @ref="_dnetExpansionPanel"
+                                    OnExpandedChanged="ExpandedChanged"
+                                    ExpansionPanelDisplayMode="@(ExpansionPanelDisplayMode.Spacing)">
+                    <DnetExpansionPanelItem Title="Collection" Description="Collection parameters">
+                        <ChildContent>
+                            <DnetFormField Label="Name" UseClearButton="false" IsRequired="true">
+                                <ChildContent>
+                                    <DnetInputText @bind-Value="_createCollectionDto.Name" PlaceHolder="Name" type="text">
+                                    </DnetInputText>
+                                </ChildContent>
+                                <ErrorContent>
+                                    <ValidationMessage For="@(() => _createCollectionDto.Name)" />
+                                </ErrorContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Shard Number" UseClearButton="false" IsRequired="true">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.ShardNumber" PlaceHolder="Shard Number" type="text">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Replication Factor" UseClearButton="false" IsRequired="true">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.ReplicationFactor" PlaceHolder="Replication Factor" type="text">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Write Consistency Factor" UseClearButton="false" IsRequired="true">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.WriteConsistencyFactor" PlaceHolder="Write Consistency Factor" type="text">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetInputCheckbox @bind-Value="_createCollectionDto.OnDiskPayload" DisplayName="On DiskPayload">
+                                On DiskPayload
+                            </DnetInputCheckbox>
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Vectors configuration" Description="Configuration of the vector storage">
+                        <ChildContent>
+                            <DnetFormField Label="Vector Size" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.VectorParams.Size" PlaceHolder="Size">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Distance">
+                                <ChildContent>
+                                    <DnetSelect TValue="string"
+                                                @bind-Value="_distance"
+                                                Items="distanceOptions"
+                                                TItem="ValueTypeDto"
+                                                DisplayValueConverter="(value) => (value.StringValue)"
+                                                ValueConverter="(value) => (value.StringKey)"
+                                                OnItemSelected="((value) => DistanceSelected(value.StringValue))">
+                                    </DnetSelect>
+                                </ChildContent>
+                            </DnetFormField>
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Hnsw configuration" Description="Params for HNSW index">
+                        <ChildContent>
+                            <DnetFormField Label="M" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.HnswConfigDiff.M">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                                <HintContent>
+                                    Number of edges per node in the index graph. Larger the value - more accurate the search, more space required
+                                </HintContent>
+                            </DnetFormField>
+                            <DnetFormField Label="ef Construct" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.HnswConfigDiff.EfConstruct">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                                <HintContent>
+                                    Number of neighbours to consider during the index building. Larger the value - more accurate the search, more time required to build the index.
+                                </HintContent>
+                            </DnetFormField>
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Optimizer configuration" Description="Params for Optimizer">
+                        <ChildContent>
+                            <DnetFormField Label="IndexingThreshold" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_createCollectionDto.OptimizersConfigDiff.IndexingThreshold">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                                <HintContent>
+                                    Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Note: 1kB = 1 vector of size 256.
+                                </HintContent>
+                            </DnetFormField>
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Wal configuration" Description="Params for Write-Ahead-Log">
+                        <ChildContent>
+
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Quantization configuration" Description="Params for quantization">
+                        <ChildContent>
+
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Sparse Vectors configuration" Description="Configuration for sparse vectors">
+                        <ChildContent>
+
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                    <DnetExpansionPanelItem Title="Payload configuration" Description="Add fields for payload">
+                        <ChildContent>
+
+                        </ChildContent>
+                    </DnetExpansionPanelItem>
+                </DnetExpansionPanel>
+            </div>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+    <div class="dnet-panel-footer">
+        <DnetButton OnClick="CancelOverlay" class="dnet-m-r-10">Close</DnetButton>
+        <DnetButton OnClick="CloseOverlay" InitialFocus="true" class="dnet-m-r-10" disabled="@_formInvalid">Ok</DnetButton>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private int OverlayReferenceId { get; set; }
+
+    private DnetExpansionPanel _dnetExpansionPanel { get; set; }
+
+    private EditContext? _editContext { get; set; }
+
+    private ValidationMessageStore? messageStore { get; set; }
+
+    private bool _isExpanded { get; set; }
+
+    private bool _formInvalid = true;
+
+    private CreateCollectionDto _createCollectionDto { get; set; } = new();
+
+    private List<ValueTypeDto> distanceOptions = new();
+
+    private string _distance = Distance.Cosine.ToString();
+
+
+    protected override void OnInitialized()
+    {
+        _createCollectionDto.HnswConfigDiff = new();
+
+        _createCollectionDto.OptimizersConfigDiff = new();
+
+        _createCollectionDto.HnswConfigDiff.M = 16;
+
+        _createCollectionDto.HnswConfigDiff.EfConstruct = 100;
+
+        _createCollectionDto.OptimizersConfigDiff.IndexingThreshold = 20000;
+
+        _createCollectionDto.VectorParams.Size = 256;
+
+        distanceOptions = Enum.GetValues(typeof(Distance))
+                          .Cast<Distance>()
+                          .Select(enumValue => new ValueTypeDto
+                              {
+                                  StringValue = enumValue.ToString(),
+                                  NumericKey = (int)enumValue
+                              })
+                          .ToList();
+
+        _editContext = new EditContext(_createCollectionDto);
+
+        messageStore = new(_editContext);
+
+        _editContext.OnFieldChanged += (data, eventArgs) =>
+        {
+            _formInvalid = !_editContext.Validate();
+            StateHasChanged();
+        };
+
+        _editContext.OnValidationRequested += (data, eventArgs) =>
+        {
+            messageStore?.Clear();
+
+            StateHasChanged();
+        };
+    }
+
+    private void CloseOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Ok,
+                ComponentData = _createCollectionDto,
+                OverlayReferenceId = OverlayReferenceId,
+                CurrentAction = OverlayCurrentAction.Adding.ToString()
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    private void CancelOverlay()
+    {
+        var dataResult = new OverlayResult()
+            {
+                CloseReason = CloseReason.Cancel,
+                ComponentData = null,
+                OverlayReferenceId = OverlayReferenceId
+            };
+
+        FloatingPanelService.Close(dataResult);
+    }
+
+    public void ExpandedChanged(DnetExpansionPanelItem expansionPanelItem)
+    {
+        var panel = expansionPanelItem;
+    }
+
+    private void DistanceSelected(string item)
+    {
+        _createCollectionDto.VectorParams.Distance = Enum.GetValues(typeof(Distance))
+                         .Cast<Distance>()
+                         .Where(enumValue => enumValue.ToString() == item)
+                         .Select(enumValue => enumValue)
+                         .FirstOrDefault();
+
+        StateHasChanged();
+    }
+}

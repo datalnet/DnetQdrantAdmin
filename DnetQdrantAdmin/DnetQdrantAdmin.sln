@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34622.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dnet.QdrantAdmin", "DnetQdrantAdmin\Dnet.QdrantAdmin.csproj", "{5515D47F-F846-4F1F-90FA-D707919AF18A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dnet.QdrantAdmin.Client", "DnetQdrantAdmin.Client\Dnet.QdrantAdmin.Client.csproj", "{99DD7AC0-6FF4-4EAF-9685-92F3B62340A8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dnet.QdrantAdmin.Api", "DnetQdrantAdmin.Api\Dnet.QdrantAdmin.Api.csproj", "{47771008-BCAB-4963-83C0-4FC437AC47DA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dnet.QdrantAdmin.Application.Shared", "DnetQdrantAdmin.Application.Shared\Dnet.QdrantAdmin.Application.Shared.csproj", "{252843BA-D5DF-4448-AB2D-60D828399596}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5515D47F-F846-4F1F-90FA-D707919AF18A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5515D47F-F846-4F1F-90FA-D707919AF18A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5515D47F-F846-4F1F-90FA-D707919AF18A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5515D47F-F846-4F1F-90FA-D707919AF18A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99DD7AC0-6FF4-4EAF-9685-92F3B62340A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99DD7AC0-6FF4-4EAF-9685-92F3B62340A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99DD7AC0-6FF4-4EAF-9685-92F3B62340A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99DD7AC0-6FF4-4EAF-9685-92F3B62340A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47771008-BCAB-4963-83C0-4FC437AC47DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47771008-BCAB-4963-83C0-4FC437AC47DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47771008-BCAB-4963-83C0-4FC437AC47DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47771008-BCAB-4963-83C0-4FC437AC47DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{252843BA-D5DF-4448-AB2D-60D828399596}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{252843BA-D5DF-4448-AB2D-60D828399596}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{252843BA-D5DF-4448-AB2D-60D828399596}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{252843BA-D5DF-4448-AB2D-60D828399596}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3847AEB7-7ED0-4F91-952E-066BBA92C4C2}
+	EndGlobalSection
+EndGlobal

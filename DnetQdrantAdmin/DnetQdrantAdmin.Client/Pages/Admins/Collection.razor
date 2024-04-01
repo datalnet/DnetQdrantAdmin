@@ -1,0 +1,427 @@
+﻿@page "/collections"
+@using Dnet.QdrantAdmin.Application.Shared.Dtos
+@using Dnet.QdrantAdmin.Application.Shared.Enums
+@using Dnet.QdrantAdmin.Client.Infrastructure.HelperClasses
+@using Dnet.QdrantAdmin.Client.Infrastructure.Interceptor
+@using Dnet.QdrantAdmin.Client.Pages.Admin
+@using Dnet.QdrantAdmin.Client.SharedComponents
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.Dialog.Infrastructure.Models
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Enums
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Interfaces
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Models
+@using Dnet.Blazor.Components.FloatingPanel.Infrastructure.Services
+@using Dnet.Blazor.Components.Form
+@using Dnet.Blazor.Components.Grid.BlgGrid
+@using Dnet.Blazor.Components.Grid.Infrastructure.Entities
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Enums
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Models
+@using Dnet.Blazor.Components.Overlay.Infrastructure.Services
+@using Dnet.Blazor.Components.Tabs
+@using Dnet.Blazor.Components.Tabs.Infrastructure.Models
+@using Dnet.Blazor.Components.Toast.Infrastructure.Enums
+@using Dnet.Blazor.Components.Toast.Infrastructure.Interfaces
+@using Qdrant.Client.Grpc
+
+@inject IFloatingPanelService FloatingPanelService
+@inject IToastService ToastService
+@inject IDialogService DialogService
+@inject IAdminService AdminService
+
+<div class="container-fluid">
+    <div class="main-page-table-container">
+        <div class="main-page-left-side @(_isActive ? "active" : null)">
+            <div class="dnet-panel-header">
+                <div class="dsec-panel-content dnet-p-l-10" style="white-space: nowrap;overflow: hidden;">
+                    <span class="dsec-panel-content-title">Collections</span>
+                    <span class="dsec-panel-content-desciption" style="text-overflow: ellipsis;overflow: hidden;">All collections</span>
+                </div>
+                <div class="dnet-panel-button-list">
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item" @onclick="(() => ShowAddCollectionPanel())">
+                        <i class="bi bi-plus"></i>
+                        <span class="dnet-panel-button-list-item-text">New</span>
+                    </div>
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item @(_selectedCollection == null || string.IsNullOrEmpty(_selectedCollection.Name) || _selectedCollections.Count() > 1 ? "disabled" : null)" @onclick="(() => ShowEditCollectionPanel())">
+                        <i class="bi bi-pencil-square"></i>
+                        <span class="dnet-panel-button-list-item-text">Edit</span>
+                    </div>
+                    <div class="dnet-m-l-20 dnet-panel-button-list-item @(!_selectedCollections.Any() ? "disabled" : null)" @onclick="(() => DeleteCollections())">
+                        <i class="bi bi-trash"></i>
+                        <span class="dnet-panel-button-list-item-text">Delete</span>
+                    </div>
+                </div>
+            </div>
+            <div class="main-table">
+                @if (_showGrids)
+                {
+                    <BlgGrid @ref="@_collectionBlGridReference"
+                             GridData="@_collections"
+                             GridColumns="@_collectionGridColumns"
+                             TItem="CollectionDto"
+                             GridOptions="@_collectionGridOptions"
+                             OnRowClicked="OnRowClicked"
+                             OnSelectionChanged="SelectionChanged">
+                    </BlgGrid>
+                }
+            </div>
+
+        </div>
+        <div class="main-page-right-side @(_isActive ? null : "active")">
+            <div class="dnet-panel-header">
+                <div class="dsec-panel-content">
+                    <span class="dsec-panel-content-title">Collection details</span>
+                    <span class="dsec-panel-content-desciption">Select a collection to see mor information</span>
+                </div>
+            </div>
+            <div class="details-container">
+                <DnetTabGroup mat-align-tabs="start" OnTabClicked="TabClicked" TabHeaderBorder="false">
+                    <DnetTab Label="Information">
+                        <div class="side-info-container">
+                            @if (_selectedCollection != null && !string.IsNullOrEmpty(_selectedCollection.Name) && _collectionInfo is not null)
+                            {
+                                <div class="container-contact-basic dnet-m-t-20">
+                                    <div class="type">
+                                        <PropertyDisplay Property="Name">@_selectedCollection.Name</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="Dimension">@_collectionInfo.Dimension</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="Distance">@_collectionInfo.Distance</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="M">@_collectionInfo.M</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="EfConstruct">@_collectionInfo.EfConstruct</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="PointsCount">@_collectionInfo.PointsCount</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="VectorsCount">@_collectionInfo.VectorsCount</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="Status">@_collectionInfo.Status</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="SegmentsCount">@_collectionInfo.SegmentsCount</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="IndexedVectorsCount">@_collectionInfo.IndexedVectorsCount</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="FullScanThreshold">@_collectionInfo.FullScanThreshold</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="MaxIndexingThreads">@_collectionInfo.MaxIndexingThreads</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="OnDisk">@_collectionInfo.OnDisk</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="IndexingThreshold">@_collectionInfo.IndexingThreshold</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="OnDiskPayload">@_collectionInfo.OnDiskPayload</PropertyDisplay>
+                                    </div>
+                                    <div class="type">
+                                        <PropertyDisplay Property="WalCapacityMb">@_collectionInfo.WalCapacityMb</PropertyDisplay>
+                                    </div>
+
+                                </div>
+                            }
+                        </div>
+                    </DnetTab>
+                </DnetTabGroup>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public Error? Error { get; set; }
+
+    private List<CollectionDto> _collections { get; set; } = new();
+
+    private BlgGrid<CollectionDto> _collectionBlGridReference;
+
+    private List<GridColumn<CollectionDto>> _collectionGridColumns { get; set; }
+
+    private GridOptions<CollectionDto> _collectionGridOptions { get; set; }
+
+    private List<CollectionDto> _selectedCollections { get; set; } = new();
+
+    private CollectionDto _selectedCollection { get; set; } = new();
+
+    private OverlayReference _overlayReference;
+
+    private OverlayReference _dialogReference;
+
+    private bool _isActive = true;
+
+    private bool _showGrids = true;
+
+    private int _activeTabId { get; set; } = 1;
+
+    private CollectionInfoDto _collectionInfo { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        _collectionGridOptions = CollectionGridConfiguration.GetCollectionGridOptions();
+
+        _collectionGridColumns = CollectionGridConfiguration.GetCollectionGridColumns();
+
+        
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _collections = await GetCollections();
+
+            await _collectionBlGridReference.SetRowDataAsync(_collections);
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private async Task<List<CollectionDto>> GetCollections()
+    {
+        var result = await AdminService.ListCollections();
+
+        return result;
+    }
+
+    public async Task TabClicked(TabClikedEventData tabClikedEventData)
+    {
+        _activeTabId = tabClikedEventData.TabId;
+
+        await LoadTab();
+    }
+
+    public async Task LoadTab()
+    {
+        switch (_activeTabId)
+        {
+            case (int)ActiveTab.Información:
+
+                if (!string.IsNullOrEmpty(_selectedCollection.Name))
+                {
+                    _collectionInfo = await AdminService.GetCollectionInfo(_selectedCollection.Name);
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    private async Task OnRowClicked(RowNode<CollectionDto> rowNode)
+    {
+        _selectedCollection = rowNode != null ? rowNode.RowData : new();
+
+        await LoadTab();
+    }
+
+    public void SelectionChanged(List<RowNode<CollectionDto>> rowNodes)
+    {
+        _selectedCollections = rowNodes.Select(p => p.RowData).ToList();
+    }
+
+    public async Task ShowAddCollectionPanel()
+    {
+        try
+        {
+            var floatingPanelConfig = new FloatingPanelConfig
+                {
+                    HasBackdrop = true,
+                    HasTransparentBackdrop = true,
+                    Postion = FloatingPanelPostion.TopRight,
+                    Width = (int?)FloatingPanelWidth.Medium,
+                    Height = null
+                };
+
+            var parameters = new Dictionary<string, object>()
+            {
+            };
+
+            _overlayReference = FloatingPanelService.Show(typeof(AddCollectionPanel), parameters, floatingPanelConfig);
+
+            _overlayReference.Close += CloseAddFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    public async void CloseAddFloatingPanel(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+                var collection = (CreateCollectionDto)overlayDataResult.ComponentData;
+
+                await AdminService.CreateCollection(collection);
+
+                ToastService.Show(DnetToastConfig.Get(ToastType.Success, "Data saved successfully", "info"));
+
+                _collections = await GetCollections();
+
+                await _collectionBlGridReference.SetRowDataAsync(_collections);
+
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseAddFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private async Task ShowEditCollectionPanel()
+    {
+        try
+        {
+            if (_selectedCollection == null || _selectedCollection.CollectionId < 0) return;
+
+            // var employee = await CollectionService.GetCollectionForCollectionEdit(_selectedCollection.CollectionId);
+
+            var floatingPanelConfig = new FloatingPanelConfig
+                {
+                    HasBackdrop = true,
+                    HasTransparentBackdrop = true,
+                    Postion = FloatingPanelPostion.TopRight,
+                    Width = (int?)FloatingPanelWidth.Medium,
+                    Height = null
+                };
+
+            var parameters = new Dictionary<string, object>()
+            {
+                // { "ControlWidth", ControlWrapperWidth.Small },
+                // { "CurrentAction", OverlayCurrentAction.Adding.ToString() },
+                // { "Roles", roles },
+                // { "CollectionRoleTypes", employeeRoleTypes },
+                // { "Collection", employee },
+                // { "CollectionCustomFields", lawfirm.CustomFields.Where(x => x.EntityType == (int)CustomFieldEntityType.Collection).ToList() }
+            };
+
+            _overlayReference = FloatingPanelService.Show(typeof(EditCollectionPanel), parameters, floatingPanelConfig);
+
+            _overlayReference.Close += CloseEditFloatingPanel;
+        }
+        catch (HttpResponseException)
+        {
+            _overlayReference.Close += CloseEditFloatingPanel;
+            ToastService.Show(DnetToastConfig.Get(ToastType.Warning, "El usuario no existe, contactar al administrador", "Advertencia"));
+        }
+
+    }
+
+    private async void CloseEditFloatingPanel(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+            }
+
+            if (_overlayReference != null) _overlayReference.Close -= CloseEditFloatingPanel;
+        }
+        catch (Exception ex)
+        {
+            if (_overlayReference != null) _overlayReference.Close -= CloseEditFloatingPanel;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    private void DeleteCollections()
+    {
+        if (!_selectedCollections.Any()) return;
+
+        ShowCollectionDeleteDialog(_selectedCollections);
+    }
+
+    private void ShowCollectionDeleteDialog(List<CollectionDto> collections)
+    {
+        var names = collections.Select(p => $"{p.Name}").ToList();
+
+        var dialogConfig = new DialogConfig()
+            {
+                Title = "Delete Collections",
+                HasBackdrop = true,
+                HasTransparentBackdrop = false,
+                Width = "600px",
+                Height = "350px"
+            };
+
+        var text = "The following items will be deleted";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "Text", text },
+            { "Items", names }
+        };
+
+        _dialogReference = DialogService.Open(typeof(DeleteDialog), parameters, dialogConfig);
+
+        _dialogReference.Close += CloseCollectionDeleteDialog;
+    }
+
+    private async void CloseCollectionDeleteDialog(OverlayResult overlayDataResult)
+    {
+        try
+        {
+            if (overlayDataResult.CloseReason == CloseReason.Ok)
+            {
+                var collectionName = _selectedCollections.Select(p => p.Name).FirstOrDefault();
+
+                if(string.IsNullOrEmpty(collectionName)) return;
+
+                await AdminService.DeleteCollection(collectionName);
+
+                ToastService.Show(DnetToastConfig.Get(ToastType.Success, "Data deleted successfully", "info"));
+
+                _collections = await GetCollections();
+
+                await _collectionBlGridReference.SetRowDataAsync(_collections);
+
+                await InvokeAsync(StateHasChanged);
+
+                _selectedCollection = null;
+            };
+
+            _dialogReference.Close -= CloseCollectionDeleteDialog;
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _dialogReference.Close -= CloseCollectionDeleteDialog;
+            Error?.ProcessError(ex);
+        }
+    }
+
+    public enum ActiveTab
+    {
+        Información = 1,
+    }
+}
