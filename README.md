@@ -1,2 +1,2 @@
-# BlazeOrbital
-BlazeOrbital
+# DnetQdrantAdmin
+Datalnet Qdrant Vector Database Administrator 
