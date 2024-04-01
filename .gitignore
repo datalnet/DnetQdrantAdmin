@@ -5,3 +5,5 @@
 # /LawyerShelve/src/Dnet.LawyerShelve.Api/appsettings.Development.json
 LawyerShelve/src/Dnet.LawyerShelve.Api/appsettings.Development.json
 LawyerShelve/src/Dnet.LawyerShelve.Client.Wasm/wwwroot/appsettings.Development.json
+
+DnetQdrantAdmin/DnetQdrantAdmin.Api/appsettings.Development.json
