@@ -1,0 +1,55 @@
+"How has technology affected communication and work in the 21st century?"
+Relacionado con Chunk 1.
+
+"What are some applications of Artificial Intelligence in different fields?"
+Relacionado con Chunk 2.
+
+"How is blockchain technology being used outside of cryptocurrency?"
+Relacionado con Chunk 3.
+
+"What are the main challenges associated with rapid technological advancements?"
+Relacionado con Chunk 4.
+
+"What future technologies could redefine current technological boundaries?"
+Relacionado con Chunk 5.
+
+"What are the implications of quantum computing for future technological development?"
+Relacionado con Chunk 5.
+
+"How can the digital divide be addressed to ensure equitable benefits from technology?"
+Relacionado con Chunk 4.
+
+
+"What is the significance of spice in 'Dune'?"
+Relacionado con Chunk 1.
+
+"How does Paul Atreides come to live among the Fremen?"
+Relacionado con Chunk 3.
+
+"What transformation does Paul undergo in the desert?"
+Relacionado con Chunk 4.
+
+"Who are Paul Atreides' main adversaries in 'Dune'?"
+Relacionado con Chunk 2 y Chunk 4.
+
+"How does 'Dune' explore the theme of ecology?"
+Relacionado con Chunk 6.
+
+"What role does prophecy play in Paul Atreides' journey?"
+Relacionado con Chunk 3 y Chunk 6.
+
+"How does Paul Atreides achieve power in the galaxy?"
+Relacionado con Chunk 5.
+
+{
+  "should": [
+    {
+      "field": {
+        "key": "UserName",
+        "match": {
+          "text": "DVS019"
+        }
+      }
+    }
+  ]
+}

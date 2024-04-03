@@ -15,11 +15,16 @@
 <style>
     .form-container {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 columnas */
-        grid-template-rows: auto auto auto auto auto; /* 5 filas */
-        gap: 10px; /* Espacio entre celdas */
-        width: 500px; /* Ancho del contenedor */
-        margin: 0 auto; /* Centrar el contenedor */
+        grid-template-columns: 1fr 1fr;
+        /* 2 columnas */
+        grid-template-rows: auto auto auto auto auto;
+        /* 5 filas */
+        gap: 10px;
+        /* Espacio entre celdas */
+        width: 500px;
+        /* Ancho del contenedor */
+        margin: 0;
+        /* Centrar el contenedor */
     }
 </style>
 
@@ -33,94 +38,88 @@
                 </div>
             </div>
             <div class="search-container">
-                <div class="search-conditions">
-                    <EditForm EditContext="@_editContext" class="form-container">
-                        <DnetFormField Label="LLM Model" IsRequired="true">
-                            <ChildContent>
-                                <DnetSelect TValue="string"
-                                            @bind-Value="@_similaritySearchDto.LlmModel"
-                                            Items="_llmModels"
-                                            TItem="ModelDto"
-                                            DisplayValueConverter="(value) => (value.Model)"
-                                            ValueConverter="(value) => (value.Model)"
-                                            PlaceHolder=""
-                                            OnItemSelected="ModelSelected">
-                                </DnetSelect>
-                            </ChildContent>
-                        </DnetFormField>
-                        <DnetFormField Label="Dimension" IsRequired="true">
-                            <ChildContent>
-                                <DnetSelect TValue="int"
-                                            @bind-Value="@_similaritySearchDto.Dimension"
-                                            Items="_dimensions"
-                                            TItem="int"
-                                            DisplayValueConverter="(value) => (value.ToString())"
-                                            ValueConverter="(value) => (value)"
-                                            PlaceHolder=""
-                                            >
-                                </DnetSelect>
-                            </ChildContent>
-                        </DnetFormField>
-                        <DnetFormField Label="Collection" IsRequired="true">
-                            <ChildContent>
-                                <DnetSelect TValue="string"
-                                            @bind-Value="@_similaritySearchDto.CollectionName"
-                                            Items="_collections"
-                                            TItem="CollectionDto"
-                                            DisplayValueConverter="(value) => (value.Name)"
-                                            ValueConverter="(value) => (value.Name)"
-                                            PlaceHolder="Collection">
-                                </DnetSelect>
-                            </ChildContent>
-                        </DnetFormField>
-                        <DnetFormField Label="Number of points to retrieve" UseClearButton="false">
-                            <ChildContent>
-                                <DnetInputNumber @bind-Value="_similaritySearchDto.Limit">
-                                </DnetInputNumber>
-                            </ChildContent>
-                        </DnetFormField>
-                        <DnetFormField Label="Score threshold" UseClearButton="false">
-                            <ChildContent>
-                                <DnetInputNumber @bind-Value="_similaritySearchDto.ScoreThreshold">
-                                </DnetInputNumber>
-                            </ChildContent>
-                        </DnetFormField>
-                        <DnetFormField Label="ef Search" UseClearButton="false">
-                            <ChildContent>
-                                <DnetInputNumber @bind-Value="_efSearch">
-                                </DnetInputNumber>
-                            </ChildContent>
-                        </DnetFormField>
+                <div class="search-conditions" style="width: calc(100% - 40px);">
+                    <EditForm EditContext="@_editContext">
+                        <div class="form-container">
+                            <DnetFormField Label="LLM Model" IsRequired="true">
+                                <ChildContent>
+                                    <DnetSelect TValue="string" @bind-Value="@_similaritySearchDto.LlmModel"
+                                        Items="_llmModels" TItem="ModelDto"
+                                        DisplayValueConverter="(value) => (value.Model)"
+                                        ValueConverter="(value) => (value.Model)" PlaceHolder=""
+                                        OnItemSelected="ModelSelected">
+                                    </DnetSelect>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Dimension" IsRequired="true">
+                                <ChildContent>
+                                    <DnetSelect TValue="int" @bind-Value="@_similaritySearchDto.Dimension"
+                                        Items="_dimensions" TItem="int"
+                                        DisplayValueConverter="(value) => (value.ToString())"
+                                        ValueConverter="(value) => (value)" PlaceHolder="">
+                                    </DnetSelect>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Collection" IsRequired="true">
+                                <ChildContent>
+                                    <DnetSelect TValue="string" @bind-Value="@_similaritySearchDto.CollectionName"
+                                        Items="_collections" TItem="CollectionDto"
+                                        DisplayValueConverter="(value) => (value.Name)"
+                                        ValueConverter="(value) => (value.Name)" PlaceHolder="Collection">
+                                    </DnetSelect>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Number of points to retrieve" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_similaritySearchDto.Limit">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="Score threshold" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_similaritySearchDto.ScoreThreshold">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                            <DnetFormField Label="ef Search" UseClearButton="false">
+                                <ChildContent>
+                                    <DnetInputNumber @bind-Value="_efSearch">
+                                    </DnetInputNumber>
+                                </ChildContent>
+                            </DnetFormField>
+                        </div>
+                        <div class="search-data-container" style="margin: 0;">
+                            <div class="search-data">
+                                <DnetFormField Label="Text" UseClearButton="true" IsRequired="true">
+                                    <ChildContent>
+                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.Text" rows="10">
+                                        </DnetInputTextArea>
+                                    </ChildContent>
+                                    <HintContent>
+                                        Text to search
+                                    </HintContent>
+                                </DnetFormField>
+                            </div>
+                            <div class="filter-data">
+                                <DnetFormField Label="Filter" UseClearButton="true">
+                                    <ChildContent>
+                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.FilterString" rows="10">
+                                        </DnetInputTextArea>
+                                    </ChildContent>
+                                    <HintContent>
+                                        Data in json format
+                                    </HintContent>
+                                </DnetFormField>
+                            </div>
+                            <div class="search-control">
+                                <DnetButton OnClick="SimilaritySearch" InitialFocus="true" class="dnet-m-r-10"
+                                    disabled="@_formInvalid">Search</DnetButton>
+                            </div>
+                        </div>
                         <DataAnnotationsValidator />
                     </EditForm>
                 </div>
-                <div class="search-data-container">
-                    <div class="search-data">
-                        <DnetFormField Label="Text" UseClearButton="false">
-                            <ChildContent>
-                                <DnetInputTextArea @bind-Value="_similaritySearchDto.Text" rows="10">
-                                </DnetInputTextArea>
-                            </ChildContent>
-                            <HintContent>
-                                Text to search
-                            </HintContent>
-                        </DnetFormField>
-                    </div>
-                    <div class="filter-data">
-                        <DnetFormField Label="Filter" UseClearButton="false">
-                            <ChildContent>
-                                <DnetInputTextArea @bind-Value="_similaritySearchDto.FilterString" rows="10">
-                                </DnetInputTextArea>
-                            </ChildContent>
-                            <HintContent>
-                                Data in json format
-                            </HintContent>
-                        </DnetFormField>
-                    </div>
-                    <div class="search-control">
-                        <DnetButton OnClick="SimilaritySearch" InitialFocus="true" class="dnet-m-r-10" disabled="@_formInvalid">Search</DnetButton>
-                    </div>
-                </div>
+
             </div>
         </div>
         <div class="main-page-right-side">
@@ -204,7 +203,7 @@
         {
             _llmModels = await GetLlmModels();
 
-            if(_llmModels.Any())
+            if (_llmModels.Any())
             {
                 var model = _llmModels.Where(p => p.Default).Select(p => p).FirstOrDefault();
 

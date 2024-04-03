@@ -167,27 +167,7 @@ public class QdrantService : IQdrantService
             points.Add(point);
         }
 
-        //foreach (var pointDto in pointDtos)
-        //{
-        //    var point = new PointStruct();
-
-        //    if (pointDto.HasUuid)
-        //    {
-        //        Guid newGuid = Guid.NewGuid();
-
-        //        point.Id = newGuid;
-        //        point.Vectors = embeddings.ToArray();
-        //    }
-        //    else
-        //    {
-        //        point.Id = count++;
-        //        point.Vectors = embeddings.ToArray();
-        //    }
-
-        //    if (!string.IsNullOrEmpty(pointDto.PayloadString)) JsonToMapField(pointDto.PayloadString, point.Payload);
-
-        //    points.Add(point);
-        //}
+       
 
         return await _client.UpsertAsync(createPointsDto.CollectionName, points);
     }
@@ -455,3 +435,26 @@ public class QdrantService : IQdrantService
 //var grpcClient = new QdrantGrpcClient(channel);
 
 //_client = new QdrantClient(grpcClient);
+
+
+ //foreach (var pointDto in pointDtos)
+        //{
+        //    var point = new PointStruct();
+
+        //    if (pointDto.HasUuid)
+        //    {
+        //        Guid newGuid = Guid.NewGuid();
+
+        //        point.Id = newGuid;
+        //        point.Vectors = embeddings.ToArray();
+        //    }
+        //    else
+        //    {
+        //        point.Id = count++;
+        //        point.Vectors = embeddings.ToArray();
+        //    }
+
+        //    if (!string.IsNullOrEmpty(pointDto.PayloadString)) JsonToMapField(pointDto.PayloadString, point.Payload);
+
+        //    points.Add(point);
+        //}
