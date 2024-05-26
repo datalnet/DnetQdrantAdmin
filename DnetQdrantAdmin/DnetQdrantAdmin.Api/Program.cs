@@ -5,6 +5,10 @@ using Dnet.QdrantAdmin.Api.Infrasctructure.Services;
 using Dnet.QdrantAdmin.Api.Apis;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,8 +53,18 @@ builder.Services.AddScoped<IQdrantService, QdrantService>();
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 var httpClientHandler = new HttpClientHandler();
 httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-var channel = GrpcChannel.ForAddress($"https://192.168.1.44:6334", new GrpcChannelOptions { HttpHandler = httpClientHandler });
+var qdrantConfig = new QdrantConfig();
+builder.Configuration.GetSection("QdrantConfig").Bind(qdrantConfig);
+var channel = GrpcChannel.ForAddress($"https://{qdrantConfig}", new GrpcChannelOptions { HttpHandler = httpClientHandler });
 
+
+#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+var llmProviderConfig = new LlmProviderConfig();
+builder.Configuration.GetSection("LlmProviderConfig").Bind(llmProviderConfig);
+kernelBuilder.AddOpenAITextEmbeddingGeneration("text-embedding-ada-002", llmProviderConfig.ApiKey);
+#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+var kernel = kernelBuilder.Build();
 
 var app = builder.Build();
 
