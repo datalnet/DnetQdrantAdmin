@@ -56,6 +56,7 @@ var channel = GrpcChannel.ForAddress($"https://{qdrantConfig}", new GrpcChannelO
 
 
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+var kernelBuilder = Kernel.CreateBuilder();
 var llmProviderConfig = new LlmProviderConfig();
 builder.Configuration.GetSection("LlmProviderConfig").Bind(llmProviderConfig);
 kernelBuilder.AddOpenAITextEmbeddingGeneration(llmProviderConfig.Models[0].Model, llmProviderConfig.ApiKey);
