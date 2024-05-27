@@ -3,7 +3,6 @@ using Dnet.QdrantAdmin.Api.Infrasctructure.Factories;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Models;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Services;
 using Dnet.QdrantAdmin.Api.Apis;
-using Grpc.Net.Client;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
@@ -42,18 +41,7 @@ builder.Services.AddSingleton<IOpenAiService, OpenAiService>();
 
 builder.Services.AddTransient<IProblemDetailFactory, ProblemDetailFactory>();
 
-//builder.Services.AddScoped<IQdrantService, QdrantService>(provider =>
-//    new QdrantService("192.168.1.44"));
-
 builder.Services.AddScoped<IQdrantService, QdrantService>();
-
-AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-var httpClientHandler = new HttpClientHandler();
-httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-var qdrantConfig = new QdrantConfig();
-builder.Configuration.GetSection("QdrantConfig").Bind(qdrantConfig);
-var channel = GrpcChannel.ForAddress($"https://{qdrantConfig}", new GrpcChannelOptions { HttpHandler = httpClientHandler });
-
 
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 var kernelBuilder = Kernel.CreateBuilder();
@@ -81,3 +69,22 @@ var llmProviders = app.MapGroup("/api/LlmProviders");
 llmProviders.LlmProviderApis();
 
 app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+//AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+//var httpClientHandler = new HttpClientHandler();
+//httpClientHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+//var qdrantConfig = new QdrantConfig();
+//builder.Configuration.GetSection("QdrantConfig").Bind(qdrantConfig);
+//var channel = GrpcChannel.ForAddress($"https://{qdrantConfig}", new GrpcChannelOptions { HttpHandler = httpClientHandler });
