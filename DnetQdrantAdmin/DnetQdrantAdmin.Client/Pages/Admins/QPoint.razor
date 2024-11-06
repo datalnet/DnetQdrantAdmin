@@ -244,7 +244,7 @@
         var scrollDto = new ScrollDto
             {
                 CollectionName = _collectionName,
-                Limit = 25
+                Limit = 500
             };
 
         var result = await AdminService.ScrollPoints(scrollDto);

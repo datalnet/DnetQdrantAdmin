@@ -167,8 +167,6 @@ public class QdrantService : IQdrantService
             points.Add(point);
         }
 
-       
-
         return await _client.UpsertAsync(createPointsDto.CollectionName, points);
     }
 
