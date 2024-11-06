@@ -13,13 +13,6 @@ builder.Services.Configure<LlmProviderConfig>(builder.Configuration.GetSection("
 
 builder.Services.Configure<QdrantConfig>(builder.Configuration.GetSection("QdrantConfig"));
 
-//builder.Services.AddSingleton<OpenAIClient>(sp =>
-//{
-//    var llmProviderConfig = sp.GetRequiredService<IOptions<LlmProviderConfig>>().Value;
-
-//    return new OpenAIClient(llmProviderConfig.ApiKey);
-//});
-
 builder.Services.AddCors(
                options =>
                {
