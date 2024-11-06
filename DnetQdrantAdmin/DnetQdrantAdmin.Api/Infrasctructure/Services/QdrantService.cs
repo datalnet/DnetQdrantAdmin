@@ -143,9 +143,7 @@ public class QdrantService : IQdrantService
         {
             var pointDto = createPointsDto.pointDtos[i];
 
-            var item = embeddings.Value.Data[i];
-
-            var embedding = item.Embedding;
+            var embedding = embeddings[0];
 
             var point = new PointStruct();
 

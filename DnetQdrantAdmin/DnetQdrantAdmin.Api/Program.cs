@@ -1,9 +1,7 @@
-using Azure.AI.OpenAI;
+using Dnet.QdrantAdmin.Api.Apis;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Factories;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Models;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Services;
-using Dnet.QdrantAdmin.Api.Apis;
-using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,12 +13,12 @@ builder.Services.Configure<LlmProviderConfig>(builder.Configuration.GetSection("
 
 builder.Services.Configure<QdrantConfig>(builder.Configuration.GetSection("QdrantConfig"));
 
-builder.Services.AddSingleton<OpenAIClient>(sp =>
-{
-    var llmProviderConfig = sp.GetRequiredService<IOptions<LlmProviderConfig>>().Value;
+//builder.Services.AddSingleton<OpenAIClient>(sp =>
+//{
+//    var llmProviderConfig = sp.GetRequiredService<IOptions<LlmProviderConfig>>().Value;
 
-    return new OpenAIClient(llmProviderConfig.ApiKey);
-});
+//    return new OpenAIClient(llmProviderConfig.ApiKey);
+//});
 
 builder.Services.AddCors(
                options =>

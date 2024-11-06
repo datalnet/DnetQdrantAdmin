@@ -1,5 +1,4 @@
-﻿using Azure.AI.OpenAI;
-using Dnet.QdrantAdmin.Api.Infrasctructure.Factories;
+﻿using Dnet.QdrantAdmin.Api.Infrasctructure.Factories;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Models;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Services;
 using Dnet.QdrantAdmin.Application.Shared.Dtos;
@@ -42,9 +41,7 @@ public static class LlmProviderApi
 
             if (embeddings is not null)
             {
-                var item = embeddings.Value.Data[0];
-
-                var embedding = item.Embedding;
+                var embedding = embeddings[0];
 
                 scoredPoints = (await qdrantService.SearchAsync(similaritySearchDto, embedding)).ToList();
             }

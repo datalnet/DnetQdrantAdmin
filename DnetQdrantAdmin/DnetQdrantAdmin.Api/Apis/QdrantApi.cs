@@ -98,9 +98,7 @@ public static class QdrantApi
 
             if (embeddings is not null)
             {
-                var item = embeddings.Value.Data[0];
-
-                var embedding = item.Embedding;
+                var embedding = embeddings[0];
 
                 var updateResult = await qdrantService.InsertVectorsAsync(pointDto.CollectionName, pointDto, embedding);
             }
