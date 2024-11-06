@@ -34,14 +34,19 @@ builder.Services.AddTransient<IProblemDetailFactory, ProblemDetailFactory>();
 
 builder.Services.AddScoped<IQdrantService, QdrantService>();
 
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-var kernelBuilder = Kernel.CreateBuilder();
 var llmProviderConfig = new LlmProviderConfig();
 builder.Configuration.GetSection("LlmProviderConfig").Bind(llmProviderConfig);
-kernelBuilder.AddOpenAITextEmbeddingGeneration(llmProviderConfig.Models[0].Model, llmProviderConfig.ApiKey);
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-var kernel = kernelBuilder.Build();
+var kernel = builder.Services.AddTransient<Kernel>((sp) =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+
+#pragma warning disable SKEXP0010
+    return Kernel.CreateBuilder()
+        .AddOpenAITextEmbeddingGeneration(llmProviderConfig.Models[0].Model, llmProviderConfig.ApiKey)
+        .Build();
+#pragma warning restore SKEXP0010
+});
 
 var app = builder.Build();
 
