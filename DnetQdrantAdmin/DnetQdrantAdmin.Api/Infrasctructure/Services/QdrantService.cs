@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Dnet.QdrantAdmin.Api.Infrasctructure.Models;
+using Google.Protobuf;
 
 namespace Dnet.QdrantAdmin.Api.Infrasctructure.Services;
 
@@ -433,24 +434,24 @@ public class QdrantService : IQdrantService
 //_client = new QdrantClient(grpcClient);
 
 
- //foreach (var pointDto in pointDtos)
-        //{
-        //    var point = new PointStruct();
+//foreach (var pointDto in pointDtos)
+//{
+//    var point = new PointStruct();
 
-        //    if (pointDto.HasUuid)
-        //    {
-        //        Guid newGuid = Guid.NewGuid();
+//    if (pointDto.HasUuid)
+//    {
+//        Guid newGuid = Guid.NewGuid();
 
-        //        point.Id = newGuid;
-        //        point.Vectors = embeddings.ToArray();
-        //    }
-        //    else
-        //    {
-        //        point.Id = count++;
-        //        point.Vectors = embeddings.ToArray();
-        //    }
+//        point.Id = newGuid;
+//        point.Vectors = embeddings.ToArray();
+//    }
+//    else
+//    {
+//        point.Id = count++;
+//        point.Vectors = embeddings.ToArray();
+//    }
 
-        //    if (!string.IsNullOrEmpty(pointDto.PayloadString)) JsonToMapField(pointDto.PayloadString, point.Payload);
+//    if (!string.IsNullOrEmpty(pointDto.PayloadString)) JsonToMapField(pointDto.PayloadString, point.Payload);
 
-        //    points.Add(point);
-        //}
+//    points.Add(point);
+//}

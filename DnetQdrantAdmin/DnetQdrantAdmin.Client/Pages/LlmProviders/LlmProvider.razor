@@ -92,7 +92,7 @@
                             <div class="search-data">
                                 <DnetFormField Label="Text" UseClearButton="true" IsRequired="true">
                                     <ChildContent>
-                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.Text" rows="10">
+                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.Text" rows="10" MaxCharacters="500">
                                         </DnetInputTextArea>
                                     </ChildContent>
                                     <HintContent>
@@ -103,7 +103,7 @@
                             <div class="filter-data">
                                 <DnetFormField Label="Filter" UseClearButton="true">
                                     <ChildContent>
-                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.FilterString" rows="10">
+                                        <DnetInputTextArea @bind-Value="_similaritySearchDto.FilterString" rows="10"  MaxCharacters="500">
                                         </DnetInputTextArea>
                                     </ChildContent>
                                     <HintContent>

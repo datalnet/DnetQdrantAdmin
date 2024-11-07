@@ -1,0 +1,28 @@
+
+
+{
+    "must": [
+        {
+            "field": {
+                "key": "FoodTypeId",
+                "match": {
+                    "integer": "8"
+                }
+            }
+        }
+    ]
+}
+
+
+{
+    "must": [
+        {
+            "field": {
+                "key": "foo",
+                "match": {
+                    "keyword": "hello"
+                }
+            }
+        }
+    ]
+}"
